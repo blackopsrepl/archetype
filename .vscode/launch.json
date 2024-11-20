@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "main.py",
+            "name": "Python Debugger (Streamlit): streamlit run src/main.py",
             "type": "debugpy",
             "request": "launch",
             "module": "streamlit",
