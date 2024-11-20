@@ -1,7 +1,7 @@
 # Archetype
 
 ARCHETYPE is an exercise in LLM API wrappers.
-It aims at building a multimodal, dynamical chatbot within one closure, in such a way that it facilitates quick templating and integration into your own macros.
+It aims at building a multimodal and dynamical i.e. variable scope chatbot within one closure, in such a way that it facilitates quick templating and integration into your own macros.
 
 ## Included examples
 
