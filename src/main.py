@@ -5,7 +5,7 @@ import utils
 
 st.session_state["START"] = st.session_state.get("START", False)
 st.set_page_config(page_title="Archetype", page_icon="🧕")
-st.title("ARCHETYPE 🔗 v0.2.3")
+st.title("ARCHETYPE 🔗 v0.3.0")
 st.write("---")
 
 
@@ -17,18 +17,18 @@ if not st.session_state["START"]:
     configure_language()
     ### DESC ###
     st.write(
-        "ARCHETYPE is a LLM wrapper excercise based on [langchain](https://www.langchain.com/). It aims at delivering a dynamic, multimodal chatbot within one closure."
+        "ARCHETYPE is a LLM wrapper excercise based on [langchain](https://www.langchain.com/). \
+         It aims at delivering a dynamic, multimodal chatbot within one closure."
     )
 
     ### INSTRUCTIONS ###
     st.header("📝 Modules:")
     st.write(
-        "1. **Delphi** - allows research and information retrieval from discrete documental contexts (RAG)."
+        "1. **Dialogos** - assists the user in dealing with emotional issues and externalizing them."
     )
     st.write(
-        "2. **Dialogos** - assists the user in dealing with emotional issues and externalizing them."
+        "2. **Thesis** - allows to plan and organize an essay or documentation project."
     )
-    st.write("3. **Thesis** - allows to plan and organize a thesis or essay project.")
 
     # start button that sets the app state to start
     if st.button("🚀 START"):

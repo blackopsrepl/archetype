@@ -126,3 +126,5 @@ dmypy.json
 src/.streamlit/secrets.toml
 
 *.code-workspace
+
+chat-history/
