@@ -5,7 +5,7 @@ import utils
 
 st.session_state["START"] = st.session_state.get("START", False)
 st.set_page_config(page_title="Archetype", page_icon="🧕")
-st.title("ARCHETYPE 🔗 v0.2.1-hotfix01")
+st.title("ARCHETYPE 🔗 v0.2.3")
 st.write("---")
 
 
@@ -16,7 +16,6 @@ def start_app():
 if not st.session_state["START"]:
     configure_language()
     ### DESC ###
-
     st.write(
         "ARCHETYPE is a LLM wrapper excercise based on [langchain](https://www.langchain.com/). It aims at delivering a dynamic, multimodal chatbot within one closure."
     )

@@ -1,6 +1,6 @@
 streamlit
 streamlit_chat
-langchain
+langchain_community
 openai
 wikipedia
 pandas
