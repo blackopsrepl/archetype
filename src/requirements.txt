@@ -1,0 +1,11 @@
+streamlit
+streamlit_chat
+langchain
+openai
+wikipedia
+pandas
+pypdf
+weaviate-client
+tiktoken
+PyPDF2
+markdown
