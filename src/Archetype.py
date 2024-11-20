@@ -143,137 +143,201 @@ def archetype_factory(archetype):
                 t,
             )
 
+        def _handle_dialogos(self, user_query):
+            chain = self.setup_chain()
+            utils.display_msg(user_query, "user")
+            with st.chat_message("assistant"):
+                st_cb = StreamHandler(st.empty())
+                if "session_id" not in st.session_state:
+                    st.session_state["session_id"] = datetime.now().strftime(
+                        "%Y%m%d_%H%M%S"
+                    )
+                if not st.session_state["FIRST_DONE"]:
+                    response = chain[0].predict(topic=user_query, callbacks=[st_cb])
+                    st.session_state["FIRST_DONE"] = True
+                else:
+                    response = chain[1].predict(input=user_query, callbacks=[st_cb])
+
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response}
+                )
+                if st.session_state.save_chat_history:
+                    utils.chatlog_append_last(
+                        user_query, response, archetype, st.session_state["session_id"]
+                    )
+
+        def _handle_thesis(self, user_query, wiki, start_date, end_date):
+            (
+                subtopics_chain,
+                axes_chain,
+                outline_chain,
+                timeline_chain,
+                analysis_chain,
+                t,
+            ) = self.setup_chain()
+            utils.display_msg(user_query, "user")
+            with st.chat_message("assistant"):
+                st_cb = StreamHandler(st.empty())
+                if "session_id" not in st.session_state:
+                    st.session_state["session_id"] = datetime.now().strftime(
+                        "%Y%m%d_%H%M%S"
+                    )
+
+                if not st.session_state["FIRST_DONE"]:
+                    subtopics = subtopics_chain.invoke(
+                        {"topic": user_query}, config={"callbacks": [st_cb]}
+                    )
+                    wiki_research = wiki.run(user_query)
+                    axes = axes_chain.invoke(
+                        {"subtopics": subtopics}, config={"callbacks": [st_cb]}
+                    )
+                    outline_in = self.setup_outline(
+                        topic=user_query,
+                        subtopics=subtopics,
+                        axes=axes,
+                        wikipedia_research=wiki_research,
+                    )
+                    timeline_in = self.setup_timeline(
+                        topic=user_query,
+                        outline=outline_in,
+                        subtopics=subtopics,
+                        executive_loop=t["executive_loop"],
+                        start_date=start_date,
+                        end_date=end_date,
+                    )
+                    outline = outline_chain.invoke(
+                        {"input": outline_in}, config={"callbacks": [st_cb]}
+                    )
+                    timeline = timeline_chain.invoke(
+                        {"input": timeline_in}, config={"callbacks": [st_cb]}
+                    )
+                    response = outline + timeline
+                    st.session_state["FIRST_DONE"] = True
+                else:
+                    response = analysis_chain.invoke(
+                        {"topic": user_query}, config={"callbacks": [st_cb]}
+                    )
+
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response}
+                )
+                if st.session_state.save_chat_history:
+                    utils.chatlog_append_last(
+                        user_query, response, archetype, st.session_state["session_id"]
+                    )
+                    print(st.session_state.messages)
+
         @utils.enable_chat_history
         def main(self):
+            user_query = None
 
+            # Get user query based on archetype
             if archetype == "DIALOGOS":
-                if st.session_state["LANGUAGE"] == "en":
-                    user_query = st.chat_input(
-                        placeholder="What is causing you distress?"
-                    )
-                if st.session_state["LANGUAGE"] == "it":
-                    user_query = st.chat_input(
-                        placeholder="Cosa ti sta causando disagio?"
-                    )
+                user_query = st.chat_input(
+                    placeholder="What is causing you distress?"
+                    if st.session_state["LANGUAGE"] == "en"
+                    else "Cosa ti sta causando disagio?"
+                )
+                if user_query:
+                    self._handle_dialogos(user_query)
 
-            if archetype == "THESIS":
+            elif archetype == "THESIS":
                 wiki = WikipediaAPIWrapper()
-                if st.session_state["FIRST_DONE"] == False:
+                if not st.session_state["FIRST_DONE"]:
                     start_date = st.date_input("Start:")
                     end_date = st.date_input("Deadline:")
-                    ### TODO: isolate date input in utils.py -> class init
 
-                if st.session_state["LANGUAGE"] == "en":
-                    user_query = st.chat_input(placeholder="Insert your thesis topic!")
-                elif st.session_state["LANGUAGE"] == "it":
-                    user_query = st.chat_input(
-                        placeholder="Insersci l'argomento della tua tesi!"
+                user_query = st.chat_input(
+                    placeholder="Insert your thesis topic!"
+                    if st.session_state["LANGUAGE"] == "en"
+                    else "Insersci l'argomento della tua tesi!"
+                )
+                if user_query:
+                    self._handle_thesis(user_query, wiki, start_date, end_date)
+
+        def _handle_dialogos(self, user_query):
+            chain = self.setup_chain()
+            utils.display_msg(user_query, "user")
+            with st.chat_message("assistant"):
+                st_cb = StreamHandler(st.empty())
+                if "session_id" not in st.session_state:
+                    st.session_state["session_id"] = datetime.now().strftime(
+                        "%Y%m%d_%H%M%S"
                     )
 
-            ####################
-            ### CHAIN METHODS ##
-            ####################
+                response = (
+                    chain[0].predict(topic=user_query, callbacks=[st_cb])
+                    if not st.session_state["FIRST_DONE"]
+                    else chain[1].predict(input=user_query, callbacks=[st_cb])
+                )
 
-            if archetype == "DIALOGOS" and user_query:
-                chain = self.setup_chain()
-                utils.display_msg(user_query, "user")
-                with st.chat_message("assistant"):
-                    st_cb = StreamHandler(st.empty())
-                    if "session_id" not in st.session_state:
-                        st.session_state["session_id"] = datetime.now().strftime(
-                            "%Y%m%d_%H%M%S"
-                        )
-                    if st.session_state["FIRST_DONE"] == False:
-                        ###############
-                        ### PHASE 1 ###
-                        ###############
-                        response = chain[0].predict(topic=user_query, callbacks=[st_cb])
-                        st.session_state["FIRST_DONE"] = True
-                    else:
-                        ###############
-                        ### PHASE 2 ###
-                        ###############
-                        response = chain[1].predict(input=user_query, callbacks=[st_cb])
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": response}
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response}
+                )
+                if st.session_state.save_chat_history:
+                    utils.chatlog_append_last(
+                        user_query, response, archetype, st.session_state["session_id"]
                     )
-                    if st.session_state.save_chat_history == True:
-                        utils.chatlog_append_last(
-                            user_query,
-                            response,
-                            archetype,
-                            st.session_state["session_id"],
-                        )
 
-            if archetype == "THESIS" and user_query:
-                (
-                    subtopics_chain,
-                    axes_chain,
-                    outline_chain,
-                    timeline_chain,
-                    analysis_chain,
-                    t,
-                ) = self.setup_chain()
-                # thesis_chain, analysis_chain, t = self.setup_chain()
-                utils.display_msg(user_query, "user")
-                with st.chat_message("assistant"):
-                    st_cb = StreamHandler(st.empty())
-                    if "session_id" not in st.session_state:
-                        st.session_state["session_id"] = datetime.now().strftime(
-                            "%Y%m%d_%H%M%S"
-                        )
-
-                    if st.session_state["FIRST_DONE"] == False:
-                        ###############
-                        ### PHASE 1 ###
-                        ###############
-
-                        subtopics = subtopics_chain.invoke(
-                            {"topic": user_query}, config={"callbacks": [st_cb]}
-                        )
-                        wiki_research = wiki.run(user_query)
-                        axes = axes_chain.invoke(
-                            {"subtopics": subtopics}, config={"callbacks": [st_cb]}
-                        )
-                        outline_in = self.setup_outline(
-                            topic=user_query,
-                            subtopics=subtopics,
-                            axes=axes,
-                            wikipedia_research=wiki_research,
-                        )
-                        timeline_in = self.setup_timeline(
-                            topic=user_query,
-                            outline=outline_in,
-                            subtopics=subtopics,
-                            executive_loop=t["executive_loop"],
-                            start_date=start_date,
-                            end_date=end_date,
-                        )
-                        outline = outline_chain.invoke(
-                            {"input": outline_in}, config={"callbacks": [st_cb]}
-                        )
-                        timeline = timeline_chain.invoke(
-                            {"input": timeline_in}, config={"callbacks": [st_cb]}
-                        )
-                        response = outline + timeline
-                        st.session_state["FIRST_DONE"] = True
-                    else:
-                        ###############
-                        ### PHASE 2 ###
-                        ###############
-                        response = analysis_chain.invoke(
-                            {"topic": user_query}, config={"callbacks": [st_cb]}
-                        )
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": response}
+        def _handle_thesis(self, user_query, wiki, start_date, end_date):
+            (
+                subtopics_chain,
+                axes_chain,
+                outline_chain,
+                timeline_chain,
+                analysis_chain,
+                t,
+            ) = self.setup_chain()
+            utils.display_msg(user_query, "user")
+            with st.chat_message("assistant"):
+                st_cb = StreamHandler(st.empty())
+                if "session_id" not in st.session_state:
+                    st.session_state["session_id"] = datetime.now().strftime(
+                        "%Y%m%d_%H%M%S"
                     )
-                    if st.session_state.save_chat_history == True:
-                        utils.chatlog_append_last(
-                            user_query,
-                            response,
-                            archetype,
-                            st.session_state["session_id"],
-                        )
-                        print(st.session_state.messages)
+
+                if not st.session_state["FIRST_DONE"]:
+                    subtopics = subtopics_chain.invoke(
+                        {"topic": user_query}, config={"callbacks": [st_cb]}
+                    )
+                    wiki_research = wiki.run(user_query)
+                    axes = axes_chain.invoke(
+                        {"subtopics": subtopics}, config={"callbacks": [st_cb]}
+                    )
+                    outline_in = self.setup_outline(
+                        topic=user_query,
+                        subtopics=subtopics,
+                        axes=axes,
+                        wikipedia_research=wiki_research,
+                    )
+                    timeline_in = self.setup_timeline(
+                        topic=user_query,
+                        outline=outline_in,
+                        subtopics=subtopics,
+                        executive_loop=t["executive_loop"],
+                        start_date=start_date,
+                        end_date=end_date,
+                    )
+                    outline = outline_chain.invoke(
+                        {"input": outline_in}, config={"callbacks": [st_cb]}
+                    )
+                    timeline = timeline_chain.invoke(
+                        {"input": timeline_in}, config={"callbacks": [st_cb]}
+                    )
+                    response = outline + timeline
+                    st.session_state["FIRST_DONE"] = True
+                else:
+                    response = analysis_chain.invoke(
+                        {"topic": user_query}, config={"callbacks": [st_cb]}
+                    )
+
+                st.session_state.messages.append(
+                    {"role": "assistant", "content": response}
+                )
+                if st.session_state.save_chat_history:
+                    utils.chatlog_append_last(
+                        user_query, response, archetype, st.session_state["session_id"]
+                    )
+                    print(st.session_state.messages)
 
     return Archetype()
