@@ -10,7 +10,7 @@ It aims at building a multimodal and dynamical i.e. variable scope chatbot withi
 
 ## Requirements
 
-* Python 3.7+
+* Python 3.11+
 * Streamlit
 * Langchain
 * OpenAI API key

@@ -174,10 +174,6 @@ def display_admin_dashboard():
     ### TODO: implement real-time sliders + archetype_options
 
 
-def display_therapist_dashboard():
-    pass
-
-
 class StreamHandler(BaseCallbackHandler):
     def __init__(self, container, initial_text=""):
         self.container = container
