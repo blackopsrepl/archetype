@@ -111,7 +111,7 @@ def configure_language():
 
 
 def configure_archetype():
-    archetypes = ["DELPHI", "THESIS", "DIALOGOS"]
+    archetypes = ["THESIS", "DIALOGOS"]
     ### TODO: implement archetype_options
     ### archetype_options = ["The Hero", "The Sage", "The Explorer", "The Rebel", "The Lover", "The Creator", "The Jester", "The Magician", "The Ruler", "The Caregiver", "The Innocent", "The Everyman"]
     archetype = st.sidebar.selectbox(label="Archetype:", options=archetypes, index=0)
@@ -119,7 +119,7 @@ def configure_archetype():
 
 
 def configure_therapist_button():
-    if st.sidebar.button("👩‍⚕️ Therapist"):
+    if st.sidebar.button("👩‍⚕️ History review"):
         close_existing_panels()
         st.session_state.therapist_panel_open = True
 

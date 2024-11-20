@@ -47,114 +47,8 @@ def archetype_factory(archetype):
         #####################
         ### SETUP METHODS ###
         #####################
-        if archetype == "DELPHI":
-
-            ### (DELPHI): VECTOR STORE ###
-            def setup_weaviate(self):
-                client = weaviate.Client(
-                    url=st.secrets["WEAVIATE_CLUSTER_URL"],
-                    additional_headers={
-                        "X-OpenAI-Api-Key": st.session_state["OPENAI_API_KEY"]
-                    },
-                )
-                return client
-
-            def weaviate_store(self, client, texts, embeddings):
-                # randomize class name string
-                # TODO(store): check if class already exists
-                letters = string.ascii_lowercase
-                class_name = "".join(random.choice(letters) for i in range(10))
-
-                schema = {
-                    "class": class_name,
-                    "properties": [
-                        {
-                            "name": "category",
-                            "dataType": ["text"],
-                        },
-                        {
-                            "name": "question",
-                            "dataType": ["text"],
-                        },
-                        {
-                            "name": "answer",
-                            "dataType": ["text"],
-                        },
-                    ],
-                    # specify a vectorizer
-                    "vectorizer": "text2vec-openai",
-                    # module settings
-                    "moduleConfig": {
-                        "text2vec-openai": {
-                            "vectorizeClassName": False,
-                            "model": "ada",
-                            "modelVersion": "002",
-                            "type": "text",
-                        },
-                    },
-                }
-                if not client.schema.exists(class_name):
-                    client.schema.create_class(schema)
-
-                ### TODO: refactor to use client.batch.configure() before deprecation (next major release)
-                with client.batch(batch_size=100):
-                    for i, text in enumerate(texts):
-                        properties = {
-                            "text": text,
-                            "class": class_name,
-                        }
-                        custom_vector = embeddings[i]
-                        client.batch.add_data_object(
-                            properties, class_name, vector=custom_vector
-                        )
-
-            def save_file(self, file_bytes, file_name):
-                folder = "tmp"
-                if not os.path.exists(folder):
-                    os.makedirs(folder)
-                file_path = f"./{folder}/{file_name}"
-                with open(file_path, "wb") as f:
-                    f.write(file_bytes)
-                return file_path
-
-            ### (DELPHI): DOCUMENT ANALYSIS ###
-            @st.spinner("Analyzing documents..")
-            def analyze_pdf_documents(self, uploaded_files):
-                docs = ""
-                texts = []
-                metadatas = []
-                file_names = [file.name for file in uploaded_files]
-                file_bytes = [file.read() for file in uploaded_files]
-
-                for i, file in enumerate(file_bytes):
-                    file_path = self.save_file(file, file_names[i])
-                    loader = PyPDFLoader(file_path)
-                    documents = loader.load()
-                    text_splitter = RecursiveCharacterTextSplitter(
-                        chunk_size=1000, chunk_overlap=0
-                    )
-                    split_docs = text_splitter.split_documents(documents)
-                    docs += " ".join(str(doc) for doc in split_docs)
-                    texts += [d.page_content for d in documents]
-                    metadatas += [d.metadata for d in documents]
-                    embedding = OpenAIEmbeddings(
-                        openai_api_key=st.secrets["OPENAI_API_KEY"]
-                    )
-                    embeddings = embedding.embed_documents(texts) if embedding else None
-
-                    # TODO(write): check if class already exists
-                    # TODO(search): isolate search /w class name and vectorizer from the rest
-                    docsearch = Weaviate.from_texts(
-                        texts,
-                        embedding,
-                        weaviate_url=st.secrets["WEAVIATE_CLUSTER_URL"],
-                        by_text=False,
-                    )
-                return docs, texts, metadatas, embeddings, docsearch
 
         def setup_template(self):
-            if archetype == "DELPHI":
-                pass
             if archetype == "DIALOGOS" and st.session_state["LANGUAGE"] == "en":
                 return dialogos_eng
             if archetype == "DIALOGOS" and st.session_state["LANGUAGE"] == "it":
@@ -183,26 +77,6 @@ def archetype_factory(archetype):
                 return timeline
 
         def setup_chain(self, docsearch=None):
-
-            if archetype == "DELPHI":
-                memory = ConversationBufferMemory(
-                    memory_key="chat-history", return_messages=True
-                )
-                try:
-                    qa_chain = RetrievalQA.from_chain_type(
-                        OpenAI(
-                            temperature=0, streaming=True, model_name="gpt-3.5-turbo"
-                        ),
-                        chain_type="stuff",
-                        retriever=docsearch.as_retriever(),
-                        memory=memory,
-                        verbose=True,
-                    )
-                except Exception as e:
-                    st.error(
-                        "DELPHI document analysis failed. You have probably not declared a docsearch. Please try again."
-                    )
-                    st.error(e)
 
             if archetype == "DIALOGOS":
                 t = self.setup_template()
@@ -293,8 +167,6 @@ def archetype_factory(archetype):
                     | StrOutputParser()
                 )
 
-            if archetype == "DELPHI":
-                return qa_chain
             if archetype == "DIALOGOS":
                 return first_chain, second_chain, t
             if archetype == "THESIS":
@@ -309,34 +181,6 @@ def archetype_factory(archetype):
 
         @utils.enable_chat_history
         def main(self):
-
-            if archetype == "DELPHI":
-                texts, embeddings = [], []
-                client = self.setup_weaviate()
-                uploaded_files = st.sidebar.file_uploader(
-                    label="Upload PDF files", type=["pdf"], accept_multiple_files=True
-                )
-
-                if uploaded_files:
-                    (
-                        docs,
-                        texts,
-                        metadatas,
-                        embeddings,
-                        docsearch,
-                    ) = self.analyze_pdf_documents(uploaded_files)
-                ### TODO: isolate weaviate parameter collection in utils.py -> class init
-
-                self.weaviate_store(client, texts, embeddings)
-
-                if st.session_state["LANGUAGE"] == "en":
-                    user_query = st.chat_input(
-                        placeholder="Ask me any question about the documents you uploaded!"
-                    )
-                if st.session_state["LANGUAGE"] == "it":
-                    user_query = st.chat_input(
-                        placeholder="Chiedimi qualcosa sui documenti che hai caricato!"
-                    )
 
             if archetype == "DIALOGOS":
                 if st.session_state["LANGUAGE"] == "en":
@@ -365,27 +209,6 @@ def archetype_factory(archetype):
             ####################
             ### CHAIN METHODS ##
             ####################
-
-            if archetype == "DELPHI" and uploaded_files and user_query:
-                qa_chain = self.setup_chain(docsearch)
-                utils.display_msg(user_query, "user")
-                with st.chat_message("assistant"):
-                    st_cb = StreamHandler(st.empty())
-                    if "session_id" not in st.session_state:
-                        st.session_state["session_id"] = datetime.now().strftime(
-                            "%Y%m%d_%H%M%S"
-                        )
-                    response = qa_chain.run(user_query, callbacks=[st_cb])
-                    st.session_state.messages.append(
-                        {"role": "assistant", "content": response}
-                    )
-                    if st.session_state.save_chat_history == True:
-                        utils.chatlog_append_last(
-                            user_query,
-                            response,
-                            archetype,
-                            st.session_state["session_id"],
-                        )
 
             if archetype == "DIALOGOS" and user_query:
                 chain = self.setup_chain()
