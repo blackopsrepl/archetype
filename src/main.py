@@ -5,7 +5,7 @@ import utils
 
 st.session_state["START"] = st.session_state.get("START", False)
 st.set_page_config(page_title="Archetype", page_icon="🧕")
-st.title("ARCHETYPE 🔗 v0.2.3")
+st.title("ARCHETYPE 🔗 v0.3.0")
 st.write("---")
 
 
@@ -26,7 +26,9 @@ if not st.session_state["START"]:
     st.write(
         "1. **Dialogos** - assists the user in dealing with emotional issues and externalizing them."
     )
-    st.write("2. **Thesis** - allows to plan and organize a thesis or essay project.")
+    st.write(
+        "2. **Thesis** - allows to plan and organize an essay or documentation project."
+    )
 
     # start button that sets the app state to start
     if st.button("🚀 START"):
