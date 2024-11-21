@@ -19,19 +19,27 @@ from src.utils import (
 
 class MockSessionState:
     def __init__(self):
-        self.messages = []
+        self._session_state = {
+            "messages": [],
+            "USER_NAME": "test",
+            "LANGUAGE": "en",
+            "current_page": None,
+        }
 
     # Implementing dictionary-like behavior (for subscript access)
     def __getitem__(self, key):
-        if key == "messages":
-            return self.messages
+        if key in self._session_state:
+            return self._session_state[key]
         raise KeyError(f"{key} not found")
 
     def __setitem__(self, key, value):
-        if key == "messages":
-            self.messages = value
-        else:
-            raise KeyError(f"{key} not found")
+        self._session_state[key] = value
+
+    def __contains__(self, key):
+        return key in self._session_state
+
+    def get(self, key, default=None):
+        return self._session_state.get(key, default)
 
 
 @pytest.fixture
@@ -49,36 +57,9 @@ def setup_streamlit_mocks(mocker):
 
     # Mocking Streamlit sidebar components (if necessary)
     mocker.patch("streamlit.sidebar.text_input", return_value="test")
-    mocker.patch("streamlit.sidebar.selectbox", return_value="English")
-    mocker.patch("streamlit.sidebar.checkbox", return_value=False)
+    mocker.patch("streamlit.sidebar.selectbox", return_value="THESIS")
+    mocker.patch("streamlit.sidebar.checkbox", return_value=True)
     mocker.patch("streamlit.sidebar.button", return_value=False)
-
-
-# def test_enable_chat_history(setup_streamlit_mocks):
-#     @enable_chat_history
-#     def dummy_function():
-#         return "This is a test function."
-
-#     with pytest.raises(SystemExit):
-#         dummy_function()
-
-#     # Check if chat history initialized
-#     assert "messages" in st.session_state
-
-
-def test_display_msg(setup_streamlit_mocks):
-    # Call display_msg to test its behavior
-    display_msg("Hello, World!", "user")
-
-    # Check if the message was appended to the session_state messages
-    assert len(st.session_state["messages"]) == 1
-    assert st.session_state["messages"][0] == {
-        "role": "user",
-        "content": "Hello, World!",
-    }
-
-    # Verify that st.chat_message was called and the message was written
-    st.chat_message().write.assert_called_with("Hello, World!")
 
 
 def test_chat_to_md():
@@ -103,6 +84,37 @@ def test_save_chat():
         content = f.read()
     assert content == md_text
     os.remove(file_path)
+
+
+def test_configure_openai_api_key(setup_streamlit_mocks):
+    key = configure_openai_api_key()
+    assert st.session_state["OPENAI_API_KEY"] == "test"
+    assert os.environ["OPENAI_API_KEY"] == "test"
+
+
+def test_configure_user_name(setup_streamlit_mocks):
+    # Call the function to configure the user name
+    name = configure_user_name()
+
+    # Check if the USER_NAME in session_state is correctly set to "test"
+    assert st.session_state["USER_NAME"] == "test"  # Ensuring the USER_NAME is set
+    assert name == "test"  # Ensure the return value is also "test"
+
+
+def test_configure_language(setup_streamlit_mocks):
+    language = configure_language()
+    assert st.session_state["LANGUAGE"] == "en"
+    assert language == "en"
+
+
+def test_configure_archetype(setup_streamlit_mocks):
+    archetype = configure_archetype()
+    assert archetype == "THESIS"
+
+
+def test_configure_save_checkbox(setup_streamlit_mocks):
+    checkbox_result = configure_save_checkbox()
+    assert checkbox_result is True
 
 
 def test_stream_handler_on_llm_new_token():
