@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file. See [commit-and-tag-version](https://github.com/absolute-version/commit-and-tag-version) for commit guidelines.
 
+## [0.4.1-alpha.0](///compare/v0.4.0...v0.4.1-alpha.0) (2024-11-21)
+
+
+### Features
+
+* add mock session state, test_display_msg, test_save_chat 615a6cd
+* isolate message display and chat history tests 36b4200
+
 ## [0.4.0](///compare/v0.3.0...v0.4.0) (2024-11-20)
 
 
