@@ -5,7 +5,7 @@ import utils
 
 st.session_state["START"] = st.session_state.get("START", False)
 st.set_page_config(page_title="Archetype", page_icon="🧕")
-st.title("ARCHETYPE 🔗 v0.3.0")
+st.title("ARCHETYPE 🔗 v0.4.1-alpha.0")
 st.write("---")
 
 
