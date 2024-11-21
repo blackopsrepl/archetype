@@ -1,3 +1,18 @@
+import os
+import pytest
+import streamlit as st
+from src.utils import (
+    chat_to_md,
+    save_chat,
+    configure_user_name,
+    configure_openai_api_key,
+    configure_language,
+    configure_archetype,
+    configure_save_checkbox,
+    StreamHandler,
+)
+
+
 class MockSessionState:
     def __init__(self):
         self._session_state = {
@@ -30,11 +45,6 @@ def setup_streamlit_mocks(mocker):
 
     # Assign this mock session state to `st.session_state`
     mocker.patch("streamlit.session_state", mock_session_state)
-
-    # Mocking Streamlit's `chat_message` method to prevent errors during the test
-    mock_chat_message = mocker.MagicMock()
-    mock_chat_message.write = mocker.MagicMock()
-    mocker.patch("streamlit.chat_message", return_value=mock_chat_message)
 
     # Mocking Streamlit sidebar components (if necessary)
     mocker.patch("streamlit.sidebar.text_input", return_value="test")
@@ -78,8 +88,8 @@ def test_configure_user_name(setup_streamlit_mocks):
     name = configure_user_name()
 
     # Check if the USER_NAME in session_state is correctly set to "test"
-    assert st.session_state["USER_NAME"] == "test"  # Ensuring the USER_NAME is set
-    assert name == "test"  # Ensure the return value is also "test"
+    assert st.session_state["USER_NAME"] == "test"
+    assert name == "test"
 
 
 def test_configure_language(setup_streamlit_mocks):
